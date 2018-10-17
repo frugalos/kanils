@@ -1,6 +1,6 @@
 [package]
 name = "kanils"
-version = "1.0.0"
+version = "1.0.1"
 authors = ["The FrugalOS Developers"]
 description = "Kind and Nice tool for Lump Storage"
 homepage = "https://github.com/frugalos/kanils"

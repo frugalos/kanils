@@ -33,13 +33,22 @@ Rustで書かれたKey-Valueストア [CannyLS](https://github.com/frugalos/cann
     * 技術的には、Linuxの実装で`O_DIRECT`を用いた読み書きを行うことに起因している  
     （詳しくは https://github.com/frugalos/cannyls/wiki/Terminology#アライメント を参照）
 
-## KaNiLSのビルド
+## KaNiLSを使う
 KaNiLSはRustで書かれています。  
 Rustの開発環境がインストールされていない場合は [rustup](https://rustup.rs/) などを用いてインストールしてください。  
 （参考: https://www.rust-lang.org/ja-JP/install.html)
 
+### ソースコードからビルド
 ```
-kanils$ cargo build (or cargo build --release)
+$ git clone https://github.com/frugalos/kanils
+$ cd kanils
+kanils$ cargo build # この場合は target/debug に kanilsバイナリができます
+kanils$ cargo build --release # この場合は target/release に kanilsバイナリができます
+```
+
+### Cargoを使ったインストール
+```
+$ cargo install kanils
 ```
 
 ## KaNiLSの機能
