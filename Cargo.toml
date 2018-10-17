@@ -1,0 +1,18 @@
+[package]
+name = "kanils"
+version = "1.0.0"
+authors = ["The FrugalOS Developers"]
+description = "Kind and Nice tool for Lump Storage"
+homepage = "https://github.com/frugalos/kanils"
+repository = "https://github.com/frugalos/kanils"
+readme = "README.md"
+categories = ["Command line utilities"]
+license = "MIT"
+
+[dependencies]
+clap = "2.32"
+cannyls = "0.9.0"
+structopt = "0.2.11"
+trackable = "0.2.20"
+rustyline = "2.1.0"
+regex = "1.0.5"
