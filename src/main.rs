@@ -86,7 +86,7 @@ arg_enum! {
 }
 
 #[derive(StructOpt, Debug)]
-#[structopt(name = "basic")]
+#[structopt(name = "KaNiLS")]
 struct Opt {
     #[structopt(long = "storage", parse(from_os_str))]
     storage_path: PathBuf,

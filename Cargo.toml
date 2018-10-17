@@ -6,7 +6,7 @@ description = "Kind and Nice tool for Lump Storage"
 homepage = "https://github.com/frugalos/kanils"
 repository = "https://github.com/frugalos/kanils"
 readme = "README.md"
-categories = ["Command line utilities"]
+categories = ["command-line-interface"]
 license = "MIT"
 
 [dependencies]
