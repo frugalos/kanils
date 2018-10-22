@@ -1,0 +1,23 @@
+language: rust
+
+rust:
+  - stable
+  - beta
+  - nightly
+
+before_script:
+  - rustup component add clippy-preview
+
+script:
+  - cargo test
+  - cargo clippy
+matrix:
+  allow_failures:
+    - rust: nightly
+  include:
+    - rust: nightly
+      script: cargo bench
+
+env:
+  global:
+  - RUSTFLAGS="-D warnings"
