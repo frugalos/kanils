@@ -11,7 +11,7 @@ license = "MIT"
 
 [dependencies]
 clap = "2.32"
-cannyls = "0.9.0"
+cannyls = "^0.9"
 structopt = "0.2.11"
 trackable = "0.2.20"
 rustyline = "2.1.0"
