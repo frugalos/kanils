@@ -1,3 +1,6 @@
+// This following unused_imports attribute is needed to build KaNiLS without any warnings
+// under the stable and nightly channels at the time.
+#[allow(unused_imports)]
 #[macro_use]
 extern crate structopt;
 #[macro_use]
