@@ -15,4 +15,3 @@ script:
 env:
   global:
   - RUSTFLAGS="-D warnings"
-  

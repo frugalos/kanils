@@ -1,7 +1,7 @@
 extern crate cannyls;
 use cannyls::lump::{LumpData, LumpId};
 use cannyls::nvm::FileNvm;
-use cannyls::storage::{Storage, StorageBuilder, JournalSnapshot};
+use cannyls::storage::{JournalSnapshot, Storage, StorageBuilder};
 
 use std::path::Path;
 use std::str;
@@ -43,7 +43,9 @@ impl StorageHandle {
 
     pub fn get_string(&mut self, key: u128) -> Result<Option<String>, cannyls::Error> {
         let lump_id = LumpId::new(key);
-        self.storage.get(&lump_id).map(|s| s.map(|s| lumpdata_to_string(&s)))
+        self.storage
+            .get(&lump_id)
+            .map(|s| s.map(|s| lumpdata_to_string(&s)))
     }
     pub fn get(&mut self, key: u128) {
         let result = track_try_unwrap!(self.get_string(key));
@@ -66,7 +68,7 @@ impl StorageHandle {
     pub fn journal_info(&mut self) -> Result<JournalSnapshot, cannyls::Error> {
         self.storage.journal_snapshot()
     }
-    
+
     pub fn print_journal_info(&mut self) {
         let snapshot = track_try_unwrap!(self.journal_info());
 
@@ -102,7 +104,7 @@ impl StorageHandle {
     pub fn all_keys(&mut self) -> Vec<LumpId> {
         self.storage.list()
     }
-    
+
     pub fn print_list_of_lumpids(&mut self) {
         let ids = self.storage.list();
         if ids.is_empty() {
@@ -157,12 +159,11 @@ impl StorageHandle {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use tempdir::TempDir;
     use trackable::result::TestResult;
-    
+
     use super::*;
     use handle::StorageHandle;
 
@@ -171,7 +172,7 @@ mod tests {
             $expr.map_err(|e: ::std::io::Error| track!(cannyls::Error::from(e)))
         };
     }
-    
+
     #[test]
     fn overwrite_works() -> TestResult {
         let dir = track_io!(TempDir::new("cannyls_test"))?;
@@ -184,7 +185,7 @@ mod tests {
         assert!(handle.put_str(0, "hoge").is_ok());
         assert!(handle.put_str(0, "bar").is_ok());
         assert_eq!(handle.get_string(0)?.unwrap(), "bar".to_owned());
-        
+
         Ok(())
     }
 
