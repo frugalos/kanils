@@ -13,7 +13,7 @@ use regex::Regex;
 
 extern crate cannyls;
 use cannyls::block::BlockSize;
-use cannyls::lump::{LumpData, LumpId};
+use cannyls::lump::LumpId;
 use cannyls::nvm::FileNvm;
 use cannyls::storage::{Storage, StorageBuilder};
 
@@ -21,11 +21,14 @@ extern crate rustyline;
 use rustyline::error::ReadlineError;
 use rustyline::Editor;
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::str;
 use structopt::StructOpt;
 
 use std::time::SystemTime;
+
+extern crate kanils;
+use kanils::handle::StorageHandle;
 
 arg_enum! {
     #[derive(Debug)]
@@ -129,10 +132,6 @@ fn is_valid_characters(data: &str) -> bool {
     std::str::from_utf8(data.as_bytes()).is_ok()
 }
 
-fn lumpdata_to_string(data: &LumpData) -> String {
-    String::from_utf8(data.as_bytes().to_vec()).expect("should succeed")
-}
-
 fn create_storage_for_benchmark(
     path: PathBuf,
     count: u64,
@@ -150,137 +149,6 @@ fn create_storage_for_benchmark(
             .journal_region_ratio(journal_ratio)
             .create(nvm)
     ).map(|s| (s, total as u64))
-}
-
-struct StorageHandle {
-    storage: Storage<FileNvm>,
-}
-
-impl StorageHandle {
-    pub fn new(storage: Storage<FileNvm>) -> Self {
-        StorageHandle { storage }
-    }
-
-    pub fn create<T: AsRef<Path>>(path: T) -> Self {
-        let nvm = track_try_unwrap!(FileNvm::open(path));
-        let storage = track_try_unwrap!(StorageBuilder::new().open(nvm));
-        StorageHandle { storage }
-    }
-
-    pub fn put(&mut self, key: u128, value: &str) {
-        let lump_id = LumpId::new(key);
-        let lump_data =
-            track_try_unwrap!(self.storage.allocate_lump_data_with_bytes(value.as_bytes()));
-        let result = track_try_unwrap!(self.storage.put(&lump_id, &lump_data));
-
-        if result {
-            println!("put key={}, value={}", key, value);
-        } else {
-            println!("[overwrite] put key={}, value={}", key, value);
-        }
-    }
-
-    pub fn get(&mut self, key: u128) {
-        let lump_id = LumpId::new(key);
-        let result = track_try_unwrap!(self.storage.get(&lump_id));
-        if let Some(data) = result {
-            let result_as_string = lumpdata_to_string(&data);
-            println!("get => {:?}", result_as_string);
-        } else {
-            println!("no entry for the key {:?}", lump_id);
-        }
-    }
-
-    pub fn delete(&mut self, key: u128) {
-        let lump_id = LumpId::new(key);
-        let result = track_try_unwrap!(self.storage.delete(&lump_id));
-        println!("delete result => {:?}", result);
-    }
-
-    pub fn print_journal_info(&mut self) {
-        let snapshot = track_try_unwrap!(self.storage.journal_snapshot());
-
-        println!(
-            "journal [unreleased head] position = {}",
-            snapshot.unreleased_head
-        );
-        println!("journal [head] position = {}", snapshot.head);
-        println!("journal [tail] position = {}", snapshot.tail);
-
-        if snapshot.entries.is_empty() {
-            println!("there are no journal entries");
-        } else {
-            println!("<journal entries>");
-            for e in snapshot.entries {
-                println!("{:?}", e);
-            }
-            println!("</journal entries>");
-        }
-    }
-
-    pub fn journal_gc(&mut self) {
-        println!("run journal full GC ...");
-        track_try_unwrap!(self.storage.journal_sync());
-        let result = self.storage.journal_gc();
-        if let Err(error) = result {
-            panic!("journal_gc failed with the error {:?}", error);
-        } else {
-            println!("journal full GC succeeded!");
-        }
-    }
-
-    pub fn print_list_of_lumpids(&mut self) {
-        let ids = self.storage.list();
-        if ids.is_empty() {
-            println!("there are no lumps");
-        } else {
-            println!("<lumpid list>");
-            for lumpid in ids {
-                println!("{:?}", lumpid);
-            }
-            println!("</lumpid list>");
-        }
-    }
-
-    pub fn print_all_key_value_pairs(&mut self) {
-        let ids = self.storage.list();
-        if ids.is_empty() {
-            println!("there are no lumps");
-        } else {
-            let result = ids
-                .iter()
-                .map(|key| {
-                    (
-                        key,
-                        lumpdata_to_string(&self.storage.get(key).unwrap().unwrap()),
-                    )
-                }).collect::<Vec<_>>();
-            println!("<lump list>");
-            for lump in result {
-                println!("{:?}", lump);
-            }
-            println!("</lump list>");
-        }
-    }
-
-    pub fn print_header_info(&mut self) {
-        let header = self.storage.header();
-        println!("header =>");
-        println!("  major version = {}", header.major_version);
-        println!("  minor version = {}", header.minor_version);
-        let block_size_u64 = u64::from(header.block_size.as_u16());
-        println!("  block size = {}", block_size_u64);
-        println!("  uuid = {}", header.instance_uuid);
-        println!("  journal region size = {}", header.journal_region_size);
-        println!("    journal header size = {}", block_size_u64);
-        println!(
-            "    journal record size = {}",
-            header.journal_region_size - block_size_u64
-        );
-        println!("  data region size = {}", header.data_region_size);
-        println!("  storage header size => {}", header.region_size());
-        println!("  storage total size = {}", header.storage_size());
-    }
 }
 
 fn handle_input(handle: &mut StorageHandle, input: &str) {
