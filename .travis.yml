@@ -11,13 +11,8 @@ before_script:
 script:
   - cargo test
   - cargo clippy
-matrix:
-  allow_failures:
-    - rust: nightly
-  include:
-    - rust: nightly
-      script: cargo bench
 
 env:
   global:
   - RUSTFLAGS="-D warnings"
+  
