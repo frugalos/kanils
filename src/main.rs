@@ -8,27 +8,28 @@ extern crate clap;
 #[macro_use]
 extern crate trackable;
 
-extern crate regex;
-use regex::Regex;
-
 extern crate cannyls;
+extern crate kanils;
+extern crate regex;
+extern crate rustyline;
+
+use kanils::handle::StorageHandle;
+
 use cannyls::block::BlockSize;
 use cannyls::lump::LumpId;
 use cannyls::nvm::FileNvm;
 use cannyls::storage::{Storage, StorageBuilder};
 
-extern crate rustyline;
+use regex::Regex;
+
 use rustyline::error::ReadlineError;
 use rustyline::Editor;
 
 use std::path::PathBuf;
 use std::str;
-use structopt::StructOpt;
-
 use std::time::SystemTime;
 
-extern crate kanils;
-use kanils::handle::StorageHandle;
+use structopt::StructOpt;
 
 arg_enum! {
     #[derive(Debug)]
