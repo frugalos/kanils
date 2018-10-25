@@ -8,6 +8,9 @@
  <a href="https://docs.rs/kanils">
   <img src="https://docs.rs/kanils/badge.svg">
  </a>
+ <a href="https://travis-ci.org/frugalos/kanils">
+   <img src="https://api.travis-ci.org/frugalos/kanils.svg?branch=master">
+ </a>
  <a href="LICENSE">
   <img src="https://img.shields.io/badge/license-MIT-blue.svg">
  </a>
