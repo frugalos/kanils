@@ -40,6 +40,11 @@ impl StorageHandle {
             println!("[overwrite] put key={}, value={}", key, value);
         }
     }
+    pub fn put_bytes(&mut self, key: u128, value: &[u8]) -> Result<bool, cannyls::Error> {
+        let lump_id = LumpId::new(key);
+        let lump_data = track!(self.storage.allocate_lump_data_with_bytes(value)).unwrap();
+        self.storage.put(&lump_id, &lump_data)
+    }
     #[cfg_attr(feature = "cargo-clippy", allow(option_option))]
     pub fn get_as_string(&mut self, key: u128) -> Result<Option<Option<String>>, cannyls::Error> {
         let lump_id = LumpId::new(key);
@@ -216,7 +221,7 @@ mod tests {
 
         assert!(handle.put_str(0, "hoge").is_ok());
         assert!(handle.put_str(0, "bar").is_ok());
-        assert_eq!(handle.get_string(0)?.unwrap(), "bar".to_owned());
+        assert_eq!(handle.get_as_string(0)?.unwrap().unwrap(), "bar".to_owned());
 
         Ok(())
     }
@@ -232,7 +237,22 @@ mod tests {
 
         assert!(handle.put_str(0, "hoge").is_ok());
         assert!(handle.delete_key(0)?, true);
-        assert!(handle.get_string(0)?.is_none());
+        assert!(handle.get_as_string(0)?.is_none());
+
+        Ok(())
+    }
+
+    #[test]
+    fn puts_and_gets_bytes() -> TestResult {
+        let dir = track_io!(TempDir::new("cannyls_test"))?;
+        let path = dir.path().join("test.lusf");
+
+        let nvm = track_try_unwrap!(FileNvm::create(path, 4_000_000));
+        let storage = track_try_unwrap!(Storage::create(nvm));
+        let mut handle = StorageHandle::new(storage);
+
+        assert!(handle.put_bytes(0, &[10, 20, 30]).is_ok());
+        assert_eq!(handle.get_as_bytes(0)?.unwrap(), [10, 20, 30].to_vec());
 
         Ok(())
     }
