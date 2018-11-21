@@ -52,10 +52,15 @@ arg_enum! {
         // kanils Put --storage=storage_path --key=lumpid --data=string
         Put,
 
-        // lusfストレージの指定したkeyを持つ値を取得する
+        // lusfストレージの指定したkeyを持つ値を「文字列として」取得する
         // 存在しないkeyが指定された場合はその旨が出力される
         // kanils Get --storage=storage_path --key=lumpid
         Get,
+
+        // lusfストレージの指定したkeyを持つ値を「バイト列として」取得する
+        // 存在しないkeyが指定された場合はその旨が出力される
+        // kanils Get --storage=storage_path --key=lumpid
+        GetBytes,
 
         // lusfストレージの指定したkeyを削除する
         // 存在しないkeyが指定された場合はその旨が出力される
@@ -102,7 +107,7 @@ struct Opt {
     capacity: Option<u64>,
 
     #[structopt(long = "key")]
-    lumpid: Option<u128>,
+    lumpid: Option<String>,
 
     #[structopt(long = "value")]
     data: Option<String>,
@@ -113,20 +118,30 @@ struct Opt {
     #[structopt(long = "size")]
     size: Option<usize>,
 
-    #[structopt(
-        raw(
-            possible_values = "&Command::variants()",
-            requires_ifs = r#"&[
+    #[structopt(raw(
+        possible_values = "&Command::variants()",
+        requires_ifs = r#"&[
 ("Create", "capacity"),
 ("Put", "lumpid"),("Put", "data"),
-("Get", "lumpid"),
+("Get", "lumpid"),("GetBytes", "lumpid"),
 ("Delete", "lumpid"),
 ("WBench", "count"),("WBench", "size"),
 ("WRBench", "count"),("WRBench", "size")
 ]"#
-        )
-    )]
+    ))]
     command: Command,
+}
+
+/// 0x... --try to convert as hexadecidaml number--> u128
+/// otherwise --try to convert as decidaml number--> u128
+fn string_to_u128(lumpid_str: &str) -> u128 {
+    if lumpid_str.len() <= 2 {
+        u128::from_str_radix(&lumpid_str, 10).unwrap()
+    } else if lumpid_str.starts_with("0x") {
+        u128::from_str_radix(&lumpid_str[2..], 16).unwrap()
+    } else {
+        u128::from_str_radix(&lumpid_str, 10).unwrap()
+    }
 }
 
 fn is_valid_characters(data: &str) -> bool {
@@ -153,13 +168,19 @@ fn create_storage_for_benchmark(
 }
 
 fn handle_input(handle: &mut StorageHandle, input: &str) {
-    let put_regex = Regex::new(r"^put\s+([0-9]+)\s+([^\x00]+)$").unwrap();
-    let get_regex = Regex::new(r"^get\s+([0-9]+)$").unwrap();
-    let delete_regex = Regex::new(r"^delete\s*([0-9]+)$").unwrap();
+    let put_regex = Regex::new(r"^put\s+([0-9]+|0x[0-9a-f]+)\s+([^\x00]+)$").unwrap();
+    let get_regex = Regex::new(r"^get\s+([0-9]+|0x[0-9a-f]+)$").unwrap();
+    let get_as_bytes_regex = Regex::new(r"^get_bytes\s+([0-9]+|0x[0-9a-f]+)$").unwrap();
+    let delete_regex = Regex::new(r"^delete\s*([0-9]+|0x[0-9a-f]+)$").unwrap();
 
     if let Some(captured) = put_regex.captures(&input) {
-        let key: u128 = captured.get(1).unwrap().as_str().parse().unwrap();
+        println!("captured = {:?}", captured);
+
+        let key: u128 = string_to_u128(captured.get(1).unwrap().as_str());
         let value: &str = captured.get(2).unwrap().as_str();
+
+        println!("key = {:?}", key);
+        println!("value = {:?}", value);
 
         if is_valid_characters(value) {
             handle.put(key, value);
@@ -167,10 +188,13 @@ fn handle_input(handle: &mut StorageHandle, input: &str) {
             println!("your input value {} is invalid wrt UTF-8", input);
         }
     } else if let Some(captured) = get_regex.captures(&input) {
-        let key: u128 = captured.get(1).unwrap().as_str().parse().unwrap();
+        let key: u128 = string_to_u128(captured.get(1).unwrap().as_str());
         handle.get(key);
+    } else if let Some(captured) = get_as_bytes_regex.captures(&input) {
+        let key: u128 = string_to_u128(captured.get(1).unwrap().as_str());
+        handle.print_as_bytes(key);
     } else if let Some(captured) = delete_regex.captures(&input) {
-        let key: u128 = captured.get(1).unwrap().as_str().parse().unwrap();
+        let key: u128 = string_to_u128(captured.get(1).unwrap().as_str());
         handle.delete(key);
     } else if input == "list" {
         handle.print_list_of_lumpids();
@@ -260,11 +284,18 @@ fn main() {
         }
         Command::Get => {
             let mut handle = StorageHandle::create(&opt.storage_path);
-            handle.get(opt.lumpid.unwrap());
+            let lumpid_str: String = opt.lumpid.unwrap();
+            handle.get(string_to_u128(&lumpid_str));
+        }
+        Command::GetBytes => {
+            let mut handle = StorageHandle::create(&opt.storage_path);
+            let lumpid_str: String = opt.lumpid.unwrap();
+            handle.print_as_bytes(string_to_u128(&lumpid_str));
         }
         Command::Put => {
             let mut handle = StorageHandle::create(&opt.storage_path);
-            handle.put(opt.lumpid.unwrap(), &opt.data.unwrap());
+            let lumpid_str: String = opt.lumpid.unwrap();
+            handle.put(string_to_u128(&lumpid_str), &opt.data.unwrap());
         }
         Command::Journal => {
             let mut handle = StorageHandle::create(&opt.storage_path);
@@ -280,7 +311,8 @@ fn main() {
         }
         Command::Delete => {
             let mut handle = StorageHandle::create(&opt.storage_path);
-            handle.delete(opt.lumpid.unwrap());
+            let lumpid_str: String = opt.lumpid.unwrap();
+            handle.delete(string_to_u128(&lumpid_str));
         }
         Command::Dump => {
             let mut handle = StorageHandle::create(&opt.storage_path);

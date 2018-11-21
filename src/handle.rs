@@ -6,8 +6,8 @@ use cannyls::storage::{JournalSnapshot, Storage, StorageBuilder};
 use std::path::Path;
 use std::str;
 
-fn lumpdata_to_string(data: &LumpData) -> String {
-    String::from_utf8(data.as_bytes().to_vec()).expect("should succeed")
+fn lumpdata_to_string(data: &LumpData) -> Option<String> {
+    String::from_utf8(data.as_bytes().to_vec()).ok()
 }
 
 pub struct StorageHandle {
@@ -40,19 +40,51 @@ impl StorageHandle {
             println!("[overwrite] put key={}, value={}", key, value);
         }
     }
-
-    pub fn get_string(&mut self, key: u128) -> Result<Option<String>, cannyls::Error> {
+    #[cfg_attr(feature = "cargo-clippy", allow(option_option))]
+    pub fn get_as_string(&mut self, key: u128) -> Result<Option<Option<String>>, cannyls::Error> {
         let lump_id = LumpId::new(key);
         self.storage
             .get(&lump_id)
-            .map(|s| s.map(|s| lumpdata_to_string(&s)))
+            .map(|s: Option<LumpData>| s.map(|s: LumpData| lumpdata_to_string(&s)))
+    }
+    pub fn get_as_bytes(&mut self, key: u128) -> Result<Option<Vec<u8>>, cannyls::Error> {
+        let lump_id = LumpId::new(key);
+        self.storage
+            .get(&lump_id)
+            .map(|s| s.map(|s| s.as_bytes().to_vec()))
     }
     pub fn get(&mut self, key: u128) {
-        let result = track_try_unwrap!(self.get_string(key));
-        if let Some(string) = result {
-            println!("get => {:?}", string);
-        } else {
-            println!("no entry for the key {:?}", key);
+        let result = track!(self.get_as_string(key)).unwrap();
+        match result {
+            Some(Some(string)) => {
+                // the putted data is a string
+                println!("get(as string) => {:?}", string);
+            }
+            Some(None) => {
+                // the putted data is not a string
+                let bytes = track!(self.get_as_bytes(key)).unwrap().unwrap();
+                println!("get({}-bytes data) =>\n{:?}", bytes.len(), bytes);
+            }
+            None => {
+                // there is no data having the `key`
+                println!("no entry for the key {:?}", key);
+            }
+        }
+    }
+    /// keyに対応するlump dataを16進数表記で出力する
+    pub fn print_as_bytes(&mut self, key: u128) {
+        let result = track!(self.get_as_bytes(key)).unwrap();
+        match result {
+            Some(bytes) => {
+                println!(
+                    "get({}-bytes data) [hex format] =>\n{:02x?}",
+                    bytes.len(),
+                    bytes
+                );
+            }
+            None => {
+                println!("no entry for the key {:?}", key);
+            }
         }
     }
 
