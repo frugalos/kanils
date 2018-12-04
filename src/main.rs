@@ -71,30 +71,13 @@ struct Opt {
     #[structopt(long = "storage", parse(from_os_str))]
     storage_path: PathBuf,
 
-    #[structopt(long = "capacity")]
-    capacity: Option<u64>,
-
     #[structopt(long = "key")]
     lumpid: Option<String>,
-
-    #[structopt(long = "value")]
-    data: Option<String>,
-
-    #[structopt(long = "count")]
-    count: Option<u128>,
-
-    #[structopt(long = "size")]
-    size: Option<usize>,
 
     #[structopt(raw(
         possible_values = "&Command::variants()",
         requires_ifs = r#"&[
-("Create", "capacity"),
-("Put", "lumpid"),("Put", "data"),
 ("Get", "lumpid"),("GetBytes", "lumpid"),
-("Delete", "lumpid"),
-("WBench", "count"),("WBench", "size"),
-("WRBench", "count"),("WRBench", "size")
 ]"#
     ))]
     command: Command,
