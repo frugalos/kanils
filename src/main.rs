@@ -52,6 +52,9 @@ arg_enum! {
         // kanils Put --storage=storage_path --key=lumpid --data=string
         Put,
 
+        // lusfストレージに、keyをkey, valueをstringとしてkey-value組を「埋め込み」で追加する
+        Embed,
+
         // lusfストレージの指定したkeyを持つ値を「文字列として」取得する
         // 存在しないkeyが指定された場合はその旨が出力される
         // kanils Get --storage=storage_path --key=lumpid
@@ -123,6 +126,7 @@ struct Opt {
         requires_ifs = r#"&[
 ("Create", "capacity"),
 ("Put", "lumpid"),("Put", "data"),
+("Embed", "lumpid"), ("Embed", "data"),
 ("Get", "lumpid"),("GetBytes", "lumpid"),
 ("Delete", "lumpid"),
 ("WBench", "count"),("WBench", "size"),
@@ -296,6 +300,11 @@ fn main() {
             let mut handle = StorageHandle::create(&opt.storage_path);
             let lumpid_str: String = opt.lumpid.unwrap();
             handle.put(string_to_u128(&lumpid_str), &opt.data.unwrap());
+        }
+        Command::Embed => {
+            let mut handle = StorageHandle::create(&opt.storage_path);
+            let lumpid_str: String = opt.lumpid.unwrap();
+            handle.embed(string_to_u128(&lumpid_str), &opt.data.unwrap());
         }
         Command::Journal => {
             let mut handle = StorageHandle::create(&opt.storage_path);

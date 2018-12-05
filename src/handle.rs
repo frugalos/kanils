@@ -45,6 +45,22 @@ impl StorageHandle {
         let lump_data = track!(self.storage.allocate_lump_data_with_bytes(value)).unwrap();
         self.storage.put(&lump_id, &lump_data)
     }
+
+    pub fn embed_str(&mut self, key: u128, value: &str) -> Result<bool, cannyls::Error> {
+        let lump_id = LumpId::new(key);
+        let lump_data = track!(LumpData::new_embedded(value.as_bytes().to_vec())).unwrap();
+        self.storage.put(&lump_id, &lump_data)
+    }
+    pub fn embed(&mut self, key: u128, value: &str) {
+        let result = track_try_unwrap!(self.embed_str(key, value));
+
+        if result {
+            println!("embed key={}, value={}", key, value);
+        } else {
+            println!("[overwrite] put key={}, value={}", key, value);
+        }
+    }
+
     #[cfg_attr(feature = "cargo-clippy", allow(option_option))]
     pub fn get_as_string(&mut self, key: u128) -> Result<Option<Option<String>>, cannyls::Error> {
         let lump_id = LumpId::new(key);
