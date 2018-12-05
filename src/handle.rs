@@ -106,6 +106,26 @@ impl StorageHandle {
         self.storage.journal_snapshot()
     }
 
+    fn journal_record_to_string(record: &cannyls::storage::JournalRecord<Vec<u8>>) -> String {
+        use cannyls::storage::JournalRecord;
+        match record {
+            JournalRecord::EndOfRecords => "EndOfRecords".to_owned(),
+            JournalRecord::GoToFront => "GoToFront".to_owned(),
+            JournalRecord::Put(lumpid, dportion) => format!("Put({:?}, {:?})", lumpid, dportion),
+            JournalRecord::Embed(lumpid, _) => {
+                format!("Embed({:?}, embedded data is skipped)", lumpid)
+            }
+            JournalRecord::Delete(lumpid) => format!("Delete({:?})", lumpid),
+            JournalRecord::DeleteRange(range) => format!("DeleteRange({:?})", range),
+        }
+    }
+    fn journal_entry_to_string(entry: &cannyls::storage::JournalEntry) -> String {
+        format!(
+            "start: {:?}, record: {}",
+            entry.start,
+            Self::journal_record_to_string(&entry.record)
+        )
+    }
     pub fn print_journal_info(&mut self) {
         let snapshot = track_try_unwrap!(self.journal_info());
 
@@ -121,7 +141,7 @@ impl StorageHandle {
         } else {
             println!("<journal entries>");
             for e in snapshot.entries {
-                println!("{:?}", e);
+                println!("{}", Self::journal_entry_to_string(&e));
             }
             println!("</journal entries>");
         }
