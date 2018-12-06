@@ -112,8 +112,8 @@ impl StorageHandle {
             JournalRecord::EndOfRecords => "EndOfRecords".to_owned(),
             JournalRecord::GoToFront => "GoToFront".to_owned(),
             JournalRecord::Put(lumpid, dportion) => format!("Put({:?}, {:?})", lumpid, dportion),
-            JournalRecord::Embed(lumpid, _) => {
-                format!("Embed({:?}, embedded data is skipped)", lumpid)
+            JournalRecord::Embed(lumpid, lumpdata) => {
+                format!("Embed({:?}, len(bytes): {})", lumpid, lumpdata.len())
             }
             JournalRecord::Delete(lumpid) => format!("Delete({:?})", lumpid),
             JournalRecord::DeleteRange(range) => format!("DeleteRange({:?})", range),
