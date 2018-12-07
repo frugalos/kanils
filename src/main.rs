@@ -66,7 +66,10 @@ arg_enum! {
 
 
         // LumpIdをparseして埋め込まれた情報を取り出す
-        LumpId
+        LumpId,
+
+
+        LocalNode,
     }
 }
 
@@ -79,6 +82,9 @@ struct Opt {
     #[structopt(long = "lumpid")]
     lumpid: Option<String>,
 
+    #[structopt(long = "localnode")]
+    localnode: Option<String>,
+
     #[structopt(raw(
         possible_values = "&Command::variants()",
         requires_ifs = r#"&[
@@ -89,7 +95,8 @@ struct Opt {
 ("Header", "storage_path"),
 ("Journal", "storage_path"),
 ("Open", "storage_path"),
-("LumpId", "lumpid")
+("LumpId", "lumpid"),
+("LocalNode", "localnode"),
 ]"#
     ))]
     command: Command,
@@ -266,6 +273,14 @@ fn main() {
             let lumpid_str: String = opt.lumpid.unwrap();
             let lumpid: u128 = string_to_u128(&lumpid_str);
             dump_lumpid(lumpid);
+        }
+        Command::LocalNode => {
+            use byteorder::{BigEndian, ByteOrder};
+            let mut id = [0; 8];
+            let localnode_str: String = opt.localnode.unwrap();
+            let localnode = u64::from_str_radix(&localnode_str, 16).unwrap();
+            BigEndian::write_u64(&mut id, localnode);
+            println!("{:?}", to_local_id(&id[1..8]));
         }
     }
 }
