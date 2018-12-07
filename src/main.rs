@@ -161,46 +161,45 @@ fn dump_lumpid(lumpid: u128) {
 
     BigEndian::write_u128(&mut id, lumpid);
 
-    let LUMP_NAMESPACE_CONTENT: u8 = 1;
-    let LUMP_TYPE_BALLOT: u8 = 0;
-    let LUMP_TYPE_LOG_ENTRY: u8 = 1;
-    let LUMP_TYPE_LOG_PREFIX_INDEX: u8 = 2;
-    let LUMP_TYPE_LOG_PREFIX: u8 = 3;
+    const LUMP_NAMESPACE_CONTENT: u8 = 1;
+    const LUMP_TYPE_BALLOT: u8 = 0;
+    const LUMP_TYPE_LOG_ENTRY: u8 = 1;
+    const LUMP_TYPE_LOG_PREFIX_INDEX: u8 = 2;
+    const LUMP_TYPE_LOG_PREFIX: u8 = 3;
 
     if id[0] == LUMP_NAMESPACE_CONTENT {
-        // https://github.com/frugalos/frugalos/blob/master/frugalos_segment/src/config.rs#L28-L38
-        println!("Type: Namespace Content");
-
-        id[0] = 0; // revert to local id
-
+        let url = "https://github.com/frugalos/frugalos/blob/master/frugalos_segment/src/config.rs#L28-L38";
+        println!("Type: Namespace Content ({})", url);
         let version: u64 = BigEndian::read_u64(&id[8..]);
-        println!("local node id = {:?}", to_local_id(&id[0..7]));
-        println!("version = 0x{:x}", version);
+        id[0] = 0;
+        println!("{:?}, version = 0x{:x}", to_local_id(&id[0..7]), version);
     } else {
         assert_eq!(id[0], 0);
 
-        if id[7] == LUMP_TYPE_BALLOT {
-            // frugalos_raft/src/node.rs: 65
-            println!("Type: Ballot (https://github.com/frugalos/frugalos/blob/master/frugalos_raft/src/node.rs#L65)");
-            println!("{:?}", to_local_id(&id[0..7]));
-        }
-
-        if id[7] == LUMP_TYPE_LOG_ENTRY {
-            // frugalos_raft/src/node.rs: 88
-            println!("Type: Log Entry (https://github.com/frugalos/frugalos/blob/master/frugalos_raft/src/node.rs#L88)");
-            println!("{:?}, index = {:?}", to_local_id(&id[0..7]), &id[8..]);
-        }
-
-        if id[7] == LUMP_TYPE_LOG_PREFIX_INDEX {
-            // frugalos_raft/src/node.rs: 112
-            println!("Type: Log Prefix Index (https://github.com/frugalos/frugalos/blob/master/frugalos_raft/src/node.rs#L112)");
-            println!("{:?}", to_local_id(&id[0..7]));
-        }
-
-        if id[7] == LUMP_TYPE_LOG_PREFIX {
-            // frugalos_raft/src/node.rs: 135
-            println!("Type: Log Prefix (https://github.com/frugalos/frugalos/blob/master/frugalos_raft/src/node.rs#L135)");
-            println!("{:?}, index = {:?}", to_local_id(&id[0..7]), &id[8..]);
+        match id[7] {
+            LUMP_TYPE_BALLOT => {
+                let url = "https://github.com/frugalos/frugalos/blob/master/frugalos_raft/src/node.rs#L65";
+                println!("Type: Ballot ({})", url);
+                println!("{:?}", to_local_id(&id[0..7]));
+            }
+            LUMP_TYPE_LOG_ENTRY => {
+                let url = "https://github.com/frugalos/frugalos/blob/master/frugalos_raft/src/node.rs#L88";
+                println!("Type: Log Entry ({})", url);
+                println!("{:?}, index = {:?}", to_local_id(&id[0..7]), &id[8..]);
+            }
+            LUMP_TYPE_LOG_PREFIX_INDEX => {
+                let url = "https://github.com/frugalos/frugalos/blob/master/frugalos_raft/src/node.rs#L112";
+                println!("Type: Log Prefix Index ({})", url);
+                println!("{:?}", to_local_id(&id[0..7]));
+            }
+            LUMP_TYPE_LOG_PREFIX => {
+                let url = "https://github.com/frugalos/frugalos/blob/master/frugalos_raft/src/node.rs#L135";
+                println!("Type: Log Prefix ({})", url);
+                println!("{:?}, index = {:?}", to_local_id(&id[0..7]), &id[8..]);
+            }
+            otherwise => {
+                println!("{}:{} error (id[7] = {:?})", file!(), line!(), otherwise);
+            }
         }
     }
 }

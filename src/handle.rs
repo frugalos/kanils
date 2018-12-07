@@ -45,7 +45,7 @@ impl StorageHandle {
         let lump_data = track!(self.storage.allocate_lump_data_with_bytes(value)).unwrap();
         self.storage.put(&lump_id, &lump_data)
     }
-    #[cfg_attr(feature = "cargo-clippy", allow(option_option))]
+    #[allow(clippy::option_option)]
     pub fn get_as_string(&mut self, key: u128) -> Result<Option<Option<String>>, cannyls::Error> {
         let lump_id = LumpId::new(key);
         self.storage
