@@ -7,6 +7,7 @@ extern crate structopt;
 extern crate clap;
 #[macro_use]
 extern crate trackable;
+extern crate byteorder;
 
 extern crate cannyls;
 extern crate kanils;
@@ -62,6 +63,10 @@ arg_enum! {
         // 対話的に Dump, List, Put, Get, Delete, Header の操作を試すことができる
         // kanils Open --storage=storage_path
         Open,
+
+
+        // LumpIdをparseして埋め込まれた情報を取り出す
+        LumpId
     }
 }
 
@@ -69,15 +74,22 @@ arg_enum! {
 #[structopt(name = "KaNiLS")]
 struct Opt {
     #[structopt(long = "storage", parse(from_os_str))]
-    storage_path: PathBuf,
+    storage_path: Option<PathBuf>,
 
-    #[structopt(long = "key")]
+    #[structopt(long = "lumpid")]
     lumpid: Option<String>,
 
     #[structopt(raw(
         possible_values = "&Command::variants()",
         requires_ifs = r#"&[
-("Get", "lumpid"),("GetBytes", "lumpid"),
+("Dump", "storage_path"),
+("List", "storage_path"),
+("Get", "lumpid"),("Get", "storage_path"),
+("GetBytes", "lumpid"),("GetBytes", "storage_path"),
+("Header", "storage_path"),
+("Journal", "storage_path"),
+("Open", "storage_path"),
+("LumpId", "lumpid")
 ]"#
     ))]
     command: Command,
@@ -118,12 +130,87 @@ fn handle_input(handle: &mut StorageHandle, input: &str) {
     }
 }
 
+#[derive(Debug)]
+struct LocalNodeId {
+    bucket_no: u32,
+    segment_no: u16,
+    member_no: u8,
+}
+
+fn to_local_id(data: &[u8]) -> LocalNodeId {
+    use byteorder::{BigEndian, ByteOrder};
+    assert_eq!(data.len(), 7);
+
+    // https://github.com/frugalos/frugalos/blob/master/src/service.rs#L175-L178
+    let bucket_no: u32 = BigEndian::read_u32(&data[0..4]);
+    let segment_no: u16 = BigEndian::read_u16(&data[4..6]);
+    let member_no: u8 = data[6];
+
+    LocalNodeId {
+        bucket_no,
+        segment_no,
+        member_no,
+    }
+}
+
+#[allow(non_snake_case)]
+fn dump_lumpid(lumpid: u128) {
+    use byteorder::{BigEndian, ByteOrder};
+
+    let mut id = [0; 16];
+
+    BigEndian::write_u128(&mut id, lumpid);
+
+    let LUMP_NAMESPACE_CONTENT: u8 = 1;
+    let LUMP_TYPE_BALLOT: u8 = 0;
+    let LUMP_TYPE_LOG_ENTRY: u8 = 1;
+    let LUMP_TYPE_LOG_PREFIX_INDEX: u8 = 2;
+    let LUMP_TYPE_LOG_PREFIX: u8 = 3;
+
+    if id[0] == LUMP_NAMESPACE_CONTENT {
+        // https://github.com/frugalos/frugalos/blob/master/frugalos_segment/src/config.rs#L28-L38
+        println!("Type: Namespace Content");
+
+        id[0] = 0; // revert to local id
+
+        let version: u64 = BigEndian::read_u64(&id[8..]);
+        println!("local node id = {:?}", to_local_id(&id[0..7]));
+        println!("version = 0x{:x}", version);
+    } else {
+        assert_eq!(id[0], 0);
+
+        if id[7] == LUMP_TYPE_BALLOT {
+            // frugalos_raft/src/node.rs: 65
+            println!("Type: Ballot (https://github.com/frugalos/frugalos/blob/master/frugalos_raft/src/node.rs#L65)");
+            println!("{:?}", to_local_id(&id[0..7]));
+        }
+
+        if id[7] == LUMP_TYPE_LOG_ENTRY {
+            // frugalos_raft/src/node.rs: 88
+            println!("Type: Log Entry (https://github.com/frugalos/frugalos/blob/master/frugalos_raft/src/node.rs#L88)");
+            println!("{:?}, index = {:?}", to_local_id(&id[0..7]), &id[8..]);
+        }
+
+        if id[7] == LUMP_TYPE_LOG_PREFIX_INDEX {
+            // frugalos_raft/src/node.rs: 112
+            println!("Type: Log Prefix Index (https://github.com/frugalos/frugalos/blob/master/frugalos_raft/src/node.rs#L112)");
+            println!("{:?}", to_local_id(&id[0..7]));
+        }
+
+        if id[7] == LUMP_TYPE_LOG_PREFIX {
+            // frugalos_raft/src/node.rs: 135
+            println!("Type: Log Prefix (https://github.com/frugalos/frugalos/blob/master/frugalos_raft/src/node.rs#L135)");
+            println!("{:?}, index = {:?}", to_local_id(&id[0..7]), &id[8..]);
+        }
+    }
+}
+
 fn main() {
     let opt = Opt::from_args();
 
     match opt.command {
         Command::Open => {
-            let nvm = track_try_unwrap!(FileNvm::open(&opt.storage_path));
+            let nvm = track_try_unwrap!(FileNvm::open(&opt.storage_path.unwrap()));
             let storage = track_try_unwrap!(StorageBuilder::new().open(nvm));
 
             let mut handle = StorageHandle::new(storage);
@@ -151,30 +238,35 @@ fn main() {
             }
         }
         Command::Get => {
-            let mut handle = StorageHandle::create(&opt.storage_path);
+            let mut handle = StorageHandle::create(&opt.storage_path.unwrap());
             let lumpid_str: String = opt.lumpid.unwrap();
             handle.get(string_to_u128(&lumpid_str));
         }
         Command::GetBytes => {
-            let mut handle = StorageHandle::create(&opt.storage_path);
+            let mut handle = StorageHandle::create(&opt.storage_path.unwrap());
             let lumpid_str: String = opt.lumpid.unwrap();
             handle.print_as_bytes(string_to_u128(&lumpid_str));
         }
         Command::Journal => {
-            let mut handle = StorageHandle::create(&opt.storage_path);
+            let mut handle = StorageHandle::create(&opt.storage_path.unwrap());
             handle.print_journal_info();
         }
         Command::List => {
-            let mut handle = StorageHandle::create(&opt.storage_path);
+            let mut handle = StorageHandle::create(&opt.storage_path.unwrap());
             handle.print_list_of_lumpids();
         }
         Command::Dump => {
-            let mut handle = StorageHandle::create(&opt.storage_path);
+            let mut handle = StorageHandle::create(&opt.storage_path.unwrap());
             handle.print_all_key_value_pairs();
         }
         Command::Header => {
-            let mut handle = StorageHandle::create(&opt.storage_path);
+            let mut handle = StorageHandle::create(&opt.storage_path.unwrap());
             handle.print_header_info();
+        }
+        Command::LumpId => {
+            let lumpid_str: String = opt.lumpid.unwrap();
+            let lumpid: u128 = string_to_u128(&lumpid_str);
+            dump_lumpid(lumpid);
         }
     }
 }

@@ -16,6 +16,7 @@ structopt = "^0.2.11"
 trackable = "^0.2.20"
 rustyline = "2"
 regex = "1"
+byteorder = { version = "^1.2", features = ["i128"] }
 
 [dev-dependencies]
 tempdir = "^0.3.7"
