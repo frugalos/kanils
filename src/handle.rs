@@ -61,7 +61,7 @@ impl StorageHandle {
         }
     }
 
-    #[cfg_attr(feature = "cargo-clippy", allow(option_option))]
+    #[allow(clippy::option_option)]
     pub fn get_as_string(&mut self, key: u128) -> Result<Option<Option<String>>, cannyls::Error> {
         let lump_id = LumpId::new(key);
         self.storage
