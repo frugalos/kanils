@@ -34,7 +34,7 @@ Rustで書かれたKey-Valueストア [CannyLS](https://github.com/frugalos/cann
     * 例1. 10バイトのデータを書き込む際には、512バイト(1ブロック)への切り上げが起こり、512バイト書き込みが発生する
     * 例2. 513バイトのデータを書き込む際には、1024バイト(2ブロック)への切り上げが起こり、1024バイト書き込みが発生する
     * 技術的には、Linuxの実装で`O_DIRECT`を用いた読み書きを行うことに起因している  
-    （詳しくは https://github.com/frugalos/cannyls/wiki/Terminology#アライメント を参照）
+    （詳しくは https://github.com/frugalos/cannyls/wiki/Terminology#ブロック を参照）
 
 ## KaNiLSを使う
 KaNiLSはRustで書かれています。  
