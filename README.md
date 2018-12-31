@@ -1,4 +1,4 @@
-<h1 align="center">KaNiLS</h1>
+<h1 align="center">KaNiLS🦀</h1>
 <h3 align="center">Kind and Nice tool for Lump Storage</h3>
 
 <p align="center">
