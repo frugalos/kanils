@@ -183,7 +183,8 @@ impl StorageHandle {
                         key,
                         lumpdata_to_string(&self.storage.get(key).unwrap().unwrap()),
                     )
-                }).collect::<Vec<_>>();
+                })
+                .collect::<Vec<_>>();
             println!("<lump list>");
             for lump in result {
                 println!("{:?}", lump);

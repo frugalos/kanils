@@ -164,11 +164,10 @@ fn create_storage_for_benchmark(
         journal_ratio = (256 * count as u64) as f64 / capacity as f64;
     }
     let nvm: FileNvm = track_try_unwrap!(FileNvm::create(path, capacity as u64));
-    track!(
-        StorageBuilder::new()
-            .journal_region_ratio(journal_ratio)
-            .create(nvm)
-    ).map(|s| (s, total as u64))
+    track!(StorageBuilder::new()
+        .journal_region_ratio(journal_ratio)
+        .create(nvm))
+    .map(|s| (s, total as u64))
 }
 
 fn handle_input(handle: &mut StorageHandle, input: &str) {
@@ -238,11 +237,9 @@ fn main() {
             let journal_ratio: f64 = 0.01f64.max(journal_region_size as f64 / total_size as f64);
 
             let nvm = track_try_unwrap!(FileNvm::create(opt.storage_path, total_size));
-            let storage = track_try_unwrap!(
-                StorageBuilder::new()
-                    .journal_region_ratio(journal_ratio)
-                    .create(nvm)
-            );
+            let storage = track_try_unwrap!(StorageBuilder::new()
+                .journal_region_ratio(journal_ratio)
+                .create(nvm));
 
             println!("---------------");
             let actual_data_region_size = storage.header().data_region_size;
