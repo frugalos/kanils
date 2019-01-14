@@ -215,7 +215,7 @@ impl StorageHandle {
 
 #[cfg(test)]
 mod tests {
-    use tempdir::TempDir;
+    use tempfile::Builder;
     use trackable::result::TestResult;
 
     use super::*;
@@ -229,7 +229,7 @@ mod tests {
 
     #[test]
     fn overwrite_works() -> TestResult {
-        let dir = track_io!(TempDir::new("cannyls_test"))?;
+        let dir = track_io!(Builder::new().prefix("cannyls_test").tempdir())?;
         let path = dir.path().join("test.lusf");
 
         let nvm = track_try_unwrap!(FileNvm::create(path, 4_000_000));
@@ -245,7 +245,7 @@ mod tests {
 
     #[test]
     fn delete_works() -> TestResult {
-        let dir = track_io!(TempDir::new("cannyls_test"))?;
+        let dir = track_io!(Builder::new().prefix("cannyls_test").tempdir())?;
         let path = dir.path().join("test.lusf");
 
         let nvm = track_try_unwrap!(FileNvm::create(path, 4_000_000));
@@ -261,7 +261,7 @@ mod tests {
 
     #[test]
     fn puts_and_gets_bytes() -> TestResult {
-        let dir = track_io!(TempDir::new("cannyls_test"))?;
+        let dir = track_io!(Builder::new().prefix("cannyls_test").tempdir())?;
         let path = dir.path().join("test.lusf");
 
         let nvm = track_try_unwrap!(FileNvm::create(path, 4_000_000));
