@@ -18,4 +18,4 @@ rustyline = "2"
 regex = "1"
 
 [dev-dependencies]
-tempdir = "^0.3.7"
+tempfile = "3"
