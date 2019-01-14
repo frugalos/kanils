@@ -2,6 +2,6 @@
 extern crate trackable;
 extern crate cannyls;
 #[cfg(test)]
-extern crate tempdir;
+extern crate tempfile;
 
 pub mod handle;
