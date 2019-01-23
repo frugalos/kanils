@@ -70,6 +70,12 @@ arg_enum! {
         // kanils Delete --storage=storage_path --key=lumpid
         Delete,
 
+        // 渡された2つのkey start, endによる区間[start, end)に含まれる
+        // keyを（すなわち start <= key < endとなるkey）を全て削除する。
+        // 結果は削除に成功したkeyの配列となる。
+        // kanils RangeDelete --storage=storage_path --start=lumpid --end=lumpid
+        RangeDelete,
+
         // lusfストレージ中のヘッダ情報を出力する
         // ヘッダ情報についての詳細は https://github.com/frugalos/cannyls/wiki/Storage-Format を参照
         // kanils Header --storage=storage_path
@@ -112,6 +118,12 @@ struct Opt {
     #[structopt(long = "key")]
     lumpid: Option<String>,
 
+    #[structopt(long = "start")]
+    lumpid_start: Option<String>,
+
+    #[structopt(long = "end")]
+    lumpid_end: Option<String>,
+
     #[structopt(long = "value")]
     data: Option<String>,
 
@@ -129,6 +141,7 @@ struct Opt {
 ("Embed", "lumpid"), ("Embed", "data"),
 ("Get", "lumpid"),("GetBytes", "lumpid"),
 ("Delete", "lumpid"),
+("RangeDelete", "lumpid_start"), ("RangeDelete", "lumpid_end"),
 ("WBench", "count"),("WBench", "size"),
 ("WRBench", "count"),("WRBench", "size")
 ]"#
@@ -319,6 +332,15 @@ fn main() {
             let mut handle = StorageHandle::create(&opt.storage_path);
             let lumpid_str: String = opt.lumpid.unwrap();
             handle.delete(string_to_u128(&lumpid_str));
+        }
+        Command::RangeDelete => {
+            let mut handle = StorageHandle::create(&opt.storage_path);
+            let lumpid_start_str: String = opt.lumpid_start.unwrap();
+            let lumpid_end_str: String = opt.lumpid_end.unwrap();
+            handle.delete_range(
+                string_to_u128(&lumpid_start_str),
+                string_to_u128(&lumpid_end_str),
+            );
         }
         Command::Dump => {
             let mut handle = StorageHandle::create(&opt.storage_path);

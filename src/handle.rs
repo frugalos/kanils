@@ -118,6 +118,14 @@ impl StorageHandle {
         println!("delete result => {:?}", result);
     }
 
+    pub fn delete_range(&mut self, start: u128, end: u128) {
+        use std::ops::Range;
+        let start = LumpId::new(start);
+        let end = LumpId::new(end);
+        let result = track_try_unwrap!(self.storage.delete_range(Range { start, end }));
+        println!("delete_range result => {:?}", result);
+    }
+
     pub fn journal_info(&mut self) -> Result<JournalSnapshot, cannyls::Error> {
         self.storage.journal_snapshot()
     }
