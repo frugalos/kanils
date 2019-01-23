@@ -10,6 +10,7 @@ categories = ["command-line-utilities"]
 license = "MIT"
 
 [dependencies]
+byteorder = { version = "1", features = ["i128"] }
 cannyls = "^0.9"
 clap = "2"
 structopt = "^0.2.11"
