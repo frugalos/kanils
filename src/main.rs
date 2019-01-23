@@ -97,6 +97,16 @@ arg_enum! {
         // 読み込みも行うような、書き込み読み込み混合の簡易ベンチマークツール
         // kanils WRBench --storage=storage_path --count=number --size=number
         WRBench,
+
+        // 与えられた16bit数 versionを用いて、lusfファイルのmajor versionを強制的に書き換える。
+        // 出力は `書き換え前のversion => 書き換え後のversion` となる。
+        // kanils ChangeMajorVersionTo --storage=storage_path --version=u16
+        ChangeMajorVersionTo,
+
+        // 与えられた16bit数 versionを用いて、lusfファイルのminor versionを強制的に書き換える。
+        // 出力は `書き換え前のversion => 書き換え後のversion` となる。
+        // kanils ChangeMinorVersionTo --storage=storage_path --version=u16
+        ChangeMinorVersionTo,
     }
 }
 
@@ -121,6 +131,9 @@ struct Opt {
     #[structopt(long = "size")]
     size: Option<usize>,
 
+    #[structopt(long = "version")]
+    version: Option<u16>,
+
     #[structopt(raw(
         possible_values = "&Command::variants()",
         requires_ifs = r#"&[
@@ -130,7 +143,9 @@ struct Opt {
 ("Get", "lumpid"),("GetBytes", "lumpid"),
 ("Delete", "lumpid"),
 ("WBench", "count"),("WBench", "size"),
-("WRBench", "count"),("WRBench", "size")
+("WRBench", "count"),("WRBench", "size"),
+("ChangeMajorVersionTo", "version"),
+("ChangeMinorVersionTo", "version")
 ]"#
     ))]
     command: Command,
@@ -327,6 +342,14 @@ fn main() {
         Command::Header => {
             let mut handle = StorageHandle::create(&opt.storage_path);
             handle.print_header_info();
+        }
+        Command::ChangeMajorVersionTo => {
+            let new_version = opt.version.unwrap();
+            StorageHandle::change_major_version_to(&opt.storage_path, new_version);
+        }
+        Command::ChangeMinorVersionTo => {
+            let new_version = opt.version.unwrap();
+            StorageHandle::change_minor_version_to(&opt.storage_path, new_version);
         }
         Command::WBench => {
             let count = opt.count.unwrap();

@@ -1,13 +1,61 @@
 extern crate cannyls;
+use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use cannyls::lump::{LumpData, LumpId};
 use cannyls::nvm::FileNvm;
 use cannyls::storage::{JournalSnapshot, Storage, StorageBuilder};
-
+use std::fs::{File, OpenOptions};
+use std::io::Seek;
 use std::path::Path;
 use std::str;
 
+macro_rules! track_io {
+    ($expr:expr) => {
+        $expr.map_err(|e: ::std::io::Error| track!(cannyls::Error::from(e)))
+    };
+}
+
 fn lumpdata_to_string(data: &LumpData) -> Option<String> {
     String::from_utf8(data.as_bytes().to_vec()).ok()
+}
+
+struct Version {
+    pub major_version: u16,
+    pub minor_version: u16,
+}
+
+// Version構造体をlusfファイルから計算する。
+// ヘッダ領域の構造を要参照:
+//   https://github.com/frugalos/cannyls/wiki/Storage-Format#2-%E3%83%98%E3%83%83%E3%83%80%E9%A0%98%E5%9F%9F
+fn get_version_from_lusf_file<P: AsRef<Path>>(path: P) -> Result<Version, std::io::Error> {
+    let mut file = track_io!(File::open(path))?;
+
+    // 次の定数6は、Magic Number 4バイトとHeader Size 2バイトを足したもの。
+    // ここから2バイトずつMajor VersionとMinor Versionが続く。
+    track_io!(file.seek(std::io::SeekFrom::Start(6)))?;
+    let major_version = track_io!(file.read_u16::<BigEndian>())?;
+    let minor_version = track_io!(file.read_u16::<BigEndian>())?;
+
+    Ok(Version {
+        major_version,
+        minor_version,
+    })
+}
+
+// lusfファイルにVersion構造体を書き戻す。
+// 書き込み先のlusfファイルの状態などは検証しない。
+fn put_version_to_lusf_file<P: AsRef<Path>>(
+    path: P,
+    version: Version,
+) -> Result<(), std::io::Error> {
+    let mut file = track_io!(OpenOptions::new().write(true).open(path)).unwrap();
+
+    // 次の定数6は、Magic Number 4バイトとHeader Size 2バイトを足したもの。
+    // ここから2バイトずつMajor VersionとMinor Versionが続く。
+    track_io!(file.seek(std::io::SeekFrom::Start(6)))?;
+    track_io!(file.write_u16::<BigEndian>(version.major_version))?;
+    track_io!(file.write_u16::<BigEndian>(version.minor_version))?;
+
+    Ok(())
 }
 
 pub struct StorageHandle {
@@ -211,6 +259,26 @@ impl StorageHandle {
         println!("  storage header size => {}", header.region_size());
         println!("  storage total size = {}", header.storage_size());
     }
+
+    pub fn change_major_version_to<T: AsRef<Path> + Clone>(path: T, new_major_version: u16) {
+        let mut version = track_io!(get_version_from_lusf_file(path.clone())).unwrap();
+        let old_major_version = version.major_version;
+        version.major_version = new_major_version;
+
+        track_io!(put_version_to_lusf_file(path, version)).unwrap();
+
+        println!("change from {} to {}", old_major_version, new_major_version);
+    }
+
+    pub fn change_minor_version_to<T: AsRef<Path> + Clone>(path: T, new_minor_version: u16) {
+        let mut version = track_io!(get_version_from_lusf_file(path.clone())).unwrap();
+        let old_minor_version = version.minor_version;
+        version.minor_version = new_minor_version;
+
+        track_io!(put_version_to_lusf_file(path, version)).unwrap();
+
+        println!("change from {} to {}", old_minor_version, new_minor_version);
+    }
 }
 
 #[cfg(test)]
@@ -220,12 +288,6 @@ mod tests {
 
     use super::*;
     use handle::StorageHandle;
-
-    macro_rules! track_io {
-        ($expr:expr) => {
-            $expr.map_err(|e: ::std::io::Error| track!(cannyls::Error::from(e)))
-        };
-    }
 
     #[test]
     fn overwrite_works() -> TestResult {
