@@ -13,12 +13,12 @@ extern crate kanils;
 extern crate regex;
 extern crate rustyline;
 
+use kanils::bench;
 use kanils::handle::StorageHandle;
 
 use cannyls::block::BlockSize;
-use cannyls::lump::LumpId;
 use cannyls::nvm::FileNvm;
-use cannyls::storage::{Storage, StorageBuilder};
+use cannyls::storage::StorageBuilder;
 
 use regex::Regex;
 
@@ -27,7 +27,6 @@ use rustyline::Editor;
 
 use std::path::PathBuf;
 use std::str;
-use std::time::SystemTime;
 
 use structopt::StructOpt;
 
@@ -104,6 +103,8 @@ arg_enum! {
         // kanils WRBench --storage=storage_path --count=number --size=number
         WRBench,
 
+        RandomGetBench,
+
         // 与えられた16bit数 versionを用いて、lusfファイルのmajor versionを強制的に書き換える。
         // 出力は `書き換え前のversion => 書き換え後のversion` となる。
         // kanils ChangeMajorVersionTo --storage=storage_path --version=u16
@@ -138,10 +139,10 @@ struct Opt {
     data: Option<String>,
 
     #[structopt(long = "count")]
-    count: Option<u128>,
+    count: Option<u64>,
 
     #[structopt(long = "size")]
-    size: Option<usize>,
+    size: Option<String>,
 
     #[structopt(long = "version")]
     version: Option<u16>,
@@ -180,22 +181,24 @@ fn is_valid_characters(data: &str) -> bool {
     std::str::from_utf8(data.as_bytes()).is_ok()
 }
 
-fn create_storage_for_benchmark(
-    path: PathBuf,
-    count: u64,
-    size: u64,
-) -> Result<(Storage<FileNvm>, u64), cannyls::Error> {
-    let total = count * size;
-    let capacity = total * 2;
-    let mut journal_ratio = 0.01f64;
-    if ((capacity as f64 * journal_ratio) as u64) < 256 * count as u64 {
-        journal_ratio = (256 * count as u64) as f64 / capacity as f64;
+fn size_to_bytes(input: &str) -> Option<u64> {
+    let kb_regex = Regex::new(r"^([0-9]+)KB$").unwrap();
+    let mb_regex = Regex::new(r"^([0-9]+)MB$").unwrap();
+    let gb_regex = Regex::new(r"^([0-9]+)GB$").unwrap();
+
+    if let Some(captured) = kb_regex.captures(&input) {
+        let kb: u64 = captured.get(1).unwrap().as_str().parse().unwrap();
+        Some(kb * 1024)
+    } else if let Some(captured) = mb_regex.captures(&input) {
+        let mb: u64 = captured.get(1).unwrap().as_str().parse().unwrap();
+        Some(mb * 1024 * 1024)
+    } else if let Some(captured) = gb_regex.captures(&input) {
+        let gb: u64 = captured.get(1).unwrap().as_str().parse().unwrap();
+        Some(gb * 1024 * 1024 * 1024)
+    } else {
+        let byte: Option<u64> = input.parse().ok();
+        byte
     }
-    let nvm: FileNvm = track_try_unwrap!(FileNvm::create(path, capacity as u64));
-    track!(StorageBuilder::new()
-        .journal_region_ratio(journal_ratio)
-        .create(nvm))
-    .map(|s| (s, total as u64))
 }
 
 fn handle_input(handle: &mut StorageHandle, input: &str) {
@@ -375,59 +378,18 @@ fn main() {
         }
         Command::WBench => {
             let count = opt.count.unwrap();
-            let size = opt.size.unwrap();
-            let (mut storage, total) =
-                create_storage_for_benchmark(opt.storage_path, count as u64, size as u64).unwrap();
-            let tmp_vec: Vec<u8> = vec![0; size];
-
-            let now = SystemTime::now();
-
-            for i in 0..count {
-                let lump_id = LumpId::new(i);
-                let lump_data =
-                    track_try_unwrap!(storage.allocate_lump_data_with_bytes(tmp_vec.as_ref()));
-                storage.put(&lump_id, &lump_data).unwrap();
-                storage.journal_sync().unwrap();
-            }
-
-            if let Ok(elapsed) = now.elapsed() {
-                println!("total = {}Byte, elapsed = {:?}", total, elapsed);
-            }
+            let size = size_to_bytes(&opt.size.unwrap()).unwrap();
+            bench::seq_write(opt.storage_path, count as u64, size as u64);
         }
         Command::WRBench => {
             let count = opt.count.unwrap();
-            let size = opt.size.unwrap();
-            let (mut storage, total) =
-                create_storage_for_benchmark(opt.storage_path, count as u64, size as u64).unwrap();
-            let tmp_vec: Vec<u8> = vec![0; size];
-
-            let now = SystemTime::now();
-
-            // access pattern: marching
-            let marching_len = 100;
-            let mut c = 0;
-            let mut keystore = Vec::with_capacity(marching_len);
-            for i in 0..count {
-                let lump_id = LumpId::new(i);
-                let lump_data =
-                    track_try_unwrap!(storage.allocate_lump_data_with_bytes(tmp_vec.as_ref()));
-                storage.put(&lump_id, &lump_data).unwrap();
-                if c < marching_len - 1 {
-                    keystore.push(lump_id);
-                    c += 1;
-                } else {
-                    // c == marching_len - 1
-                    for k in &keystore {
-                        let _ = storage.get(k);
-                    }
-                    keystore.clear();
-                    c = 0;
-                }
-            }
-
-            if let Ok(elapsed) = now.elapsed() {
-                println!("total = {}Byte, elapsed = {:?}", total, elapsed);
-            }
+            let size = size_to_bytes(&opt.size.unwrap()).unwrap();
+            bench::marching(opt.storage_path, count as u64, size as u64);
+        }
+        Command::RandomGetBench => {
+            let count = opt.count.unwrap();
+            let size = size_to_bytes(&opt.size.unwrap()).unwrap();
+            bench::random_get(opt.storage_path, count as u64, size as u64);
         }
     }
 }

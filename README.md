@@ -270,3 +270,24 @@ HISTORY:
 note: Run with `RUST_BACKTRACE=1` for a backtrace.
 ```
 
+## ベンチマーク
+
+### シーケンシャルPUT & ランダムGET
+```
+# test.lusfというファイルを作り
+# 1件3MBのデータを1000件シーケンシャルに書き込み、
+# その後に1000件をランダムにGETする。
+kanils RandomGetBench --storage test.lusf --count 1000 --size 3MB
+```
+以下は出力の例
+```
+[src/bench.rs:91] path.clone() = "test.lusf"
+[src/bench.rs:91] count = 1000
+[src/bench.rs:91] size = 3145728
+[Putting Data] start
+  [00:00:03] [########################################] 1000/1000 (0s, done)
+[Putting Data] finish @ 3s 507ms
+[Getting Data] start
+  [00:00:03] [########################################] 1000/1000 (0s, done)
+[Getting Data] finish @ 3s 539ms
+```
