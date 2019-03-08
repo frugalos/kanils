@@ -1,5 +1,6 @@
 use cannyls::lump::LumpId;
 use cannyls::nvm::FileNvm;
+use cannyls::nvm::DAXNvm;
 use cannyls::storage::{Storage, StorageBuilder};
 use std::path::PathBuf;
 use std::time::SystemTime;
@@ -53,7 +54,7 @@ fn create_storage_for_benchmark(
     path: PathBuf,
     count: u64,
     size: u64,
-) -> Result<(Storage<FileNvm>, u64), cannyls::Error> {
+) -> Result<(Storage<DAXNvm>, u64), cannyls::Error> {
     let total = count * size;
     let capacity = total * 2;
     let mut journal_ratio = 0.01f64;
@@ -61,7 +62,7 @@ fn create_storage_for_benchmark(
         // 256 is sufficient large byte for one journal record
         journal_ratio = (256 * count as u64) as f64 / capacity as f64;
     }
-    let nvm = track_try_unwrap!(FileNvm::create(path, capacity as u64));
+    let nvm = DAXNvm::new(capacity as u64);
     track!(StorageBuilder::new()
         .journal_region_ratio(journal_ratio)
         .create(nvm))
