@@ -64,6 +64,11 @@ arg_enum! {
         // kanils Get --storage=storage_path --key=lumpid
         GetBytes,
 
+        // lusfストレージの指定したkeyを持つ値を「生のバイト列として」取得する
+        // 存在しないkeyが指定された場合はその旨が出力される
+        // kanils GetRaw --storage=storage_path --key=lumpid
+        GetRaw,
+
         // lusfストレージの指定したkeyを削除する
         // 存在しないkeyが指定された場合はその旨が出力される
         // kanils Delete --storage=storage_path --key=lumpid
@@ -323,6 +328,11 @@ fn main() {
             let mut handle = StorageHandle::create(&opt.storage_path);
             let lumpid_str: String = opt.lumpid.unwrap();
             handle.print_as_bytes(string_to_u128(&lumpid_str));
+        }
+        Command::GetRaw => {
+            let mut handle = StorageHandle::create(&opt.storage_path);
+            let lumpid_str: String = opt.lumpid.unwrap();
+            handle.print_as_raw_bytes(string_to_u128(&lumpid_str));
         }
         Command::Put => {
             let mut handle = StorageHandle::create(&opt.storage_path);

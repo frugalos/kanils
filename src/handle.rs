@@ -4,7 +4,7 @@ use cannyls::lump::{LumpData, LumpId};
 use cannyls::nvm::FileNvm;
 use cannyls::storage::{JournalSnapshot, Storage, StorageBuilder};
 use std::fs::{File, OpenOptions};
-use std::io::Seek;
+use std::io::{stdout, Seek, Write};
 use std::path::Path;
 use std::str;
 
@@ -150,6 +150,18 @@ impl StorageHandle {
                     bytes.len(),
                     bytes
                 );
+            }
+            None => {
+                println!("no entry for the key {:?}", key);
+            }
+        }
+    }
+    /// keyに対応するlump dataを生バイト列として出力する
+    pub fn print_as_raw_bytes(&mut self, key: u128) {
+        let result = track!(self.get_as_bytes(key)).unwrap();
+        match result {
+            Some(bytes) => {
+                stdout().write_all(&bytes).unwrap();
             }
             None => {
                 println!("no entry for the key {:?}", key);
