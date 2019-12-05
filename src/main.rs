@@ -165,8 +165,8 @@ struct Opt {
     command: Command,
 }
 
-/// 0x... --try to convert as hexadecidaml number--> u128
-/// otherwise --try to convert as decidaml number--> u128
+/// 0x... --try to convert as hexadecimal number--> u128
+/// otherwise --try to convert as decimal number--> u128
 fn string_to_u128(lumpid_str: &str) -> u128 {
     if lumpid_str.len() <= 2 {
         u128::from_str_radix(&lumpid_str, 10).unwrap()
