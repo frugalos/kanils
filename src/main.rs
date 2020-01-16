@@ -296,7 +296,7 @@ fn main() {
                 let readline = rl.readline(">> ");
                 match readline {
                     Ok(line) => {
-                        rl.add_history_entry(line.as_ref());
+                        rl.add_history_entry(&line);
                         handle_input(&mut handle, &line);
                     }
                     Err(ReadlineError::Interrupted) => {
