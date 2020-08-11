@@ -291,3 +291,9 @@ kanils RandomGetBench --storage test.lusf --count 1000 --size 3MB
   [00:00:03] [########################################] 1000/1000 (0s, done)
 [Getting Data] finish @ 3s 539ms
 ```
+
+## バイナリのビルド
+
+```console
+$ docker build -t kanils-build:latest docker/kanils-build
+```
