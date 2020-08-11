@@ -11,7 +11,7 @@ license = "MIT"
 
 [dependencies]
 byteorder = { version = "1", features = ["i128"] }
-cannyls = "^0.9"
+cannyls = "^0.10"
 clap = "2"
 structopt = "^0.2.11"
 trackable = "^0.2.20"
