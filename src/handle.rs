@@ -295,7 +295,7 @@ mod tests {
     use trackable::result::TestResult;
 
     use super::*;
-    use handle::StorageHandle;
+    use crate::handle::StorageHandle;
 
     #[test]
     fn overwrite_works() -> TestResult {
