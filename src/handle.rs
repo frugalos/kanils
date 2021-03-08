@@ -1,4 +1,3 @@
-extern crate cannyls;
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use cannyls::lump::{LumpData, LumpId};
 use cannyls::nvm::FileNvm;
@@ -7,6 +6,7 @@ use std::fs::{File, OpenOptions};
 use std::io::Seek;
 use std::path::Path;
 use std::str;
+use trackable::{track, track_try_unwrap};
 
 macro_rules! track_io {
     ($expr:expr) => {

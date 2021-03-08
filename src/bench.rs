@@ -1,10 +1,10 @@
 use cannyls::lump::LumpId;
 use cannyls::nvm::FileNvm;
 use cannyls::storage::{Storage, StorageBuilder};
+use indicatif::{ProgressBar, ProgressStyle};
 use std::path::PathBuf;
 use std::time::SystemTime;
-
-use indicatif::{ProgressBar, ProgressStyle};
+use trackable::{track, track_try_unwrap};
 
 struct Timer {
     start: SystemTime,

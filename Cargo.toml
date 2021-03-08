@@ -23,3 +23,6 @@ rand = "^0.6"
 
 [dev-dependencies]
 tempfile = "3"
+
+[patch.crates-io]
+trackable = { git = "https://github.com/koba-e964/trackable", branch = "fix/hygiene" }

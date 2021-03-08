@@ -1,24 +1,11 @@
-// This following unused_imports attribute is needed to build KaNiLS without any warnings
-// under the stable and nightly channels at the time.
-#[allow(unused_imports)]
-#[macro_use]
-extern crate structopt;
-#[macro_use]
-extern crate clap;
-#[macro_use]
-extern crate trackable;
-
-extern crate cannyls;
-extern crate kanils;
-extern crate regex;
-extern crate rustyline;
-
 use kanils::bench;
 use kanils::handle::StorageHandle;
 
 use cannyls::block::BlockSize;
 use cannyls::nvm::FileNvm;
 use cannyls::storage::StorageBuilder;
+
+use clap::arg_enum;
 
 use regex::Regex;
 
@@ -29,6 +16,8 @@ use std::path::PathBuf;
 use std::str;
 
 use structopt::StructOpt;
+
+use trackable::track_try_unwrap;
 
 arg_enum! {
     #[derive(Debug)]

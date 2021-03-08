@@ -922,9 +922,8 @@ dependencies = [
 
 [[package]]
 name = "trackable"
-version = "0.2.22"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "53bac9fc90c105013eebfdffa064a1fb36142fd8eb72a5f9783a99147290caaa"
+version = "0.2.23"
+source = "git+https://github.com/koba-e964/trackable?branch=fix/hygiene#62d47e1aa66ff8f0bc18d38a35344888d341d3f9"
 dependencies = [
  "trackable_derive",
 ]
