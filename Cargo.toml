@@ -12,7 +12,7 @@ license = "MIT"
 
 [dependencies]
 byteorder = { version = "1", features = ["i128"] }
-cannyls = "^0.10"
+cannyls = { version = "^0.10", default-features = false }
 clap = "2"
 structopt = "^0.2.11"
 trackable = "^0.2.20"
@@ -23,3 +23,6 @@ rand = "^0.6"
 
 [dev-dependencies]
 tempfile = "3"
+
+[patch.crates-io]
+cannyls = { git = "https://github.com/frugalos/cannyls", branch = "feature/conditional-dep-on-futures" }
