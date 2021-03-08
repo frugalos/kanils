@@ -168,10 +168,8 @@ struct Opt {
 /// 0x... --try to convert as hexadecimal number--> u128
 /// otherwise --try to convert as decimal number--> u128
 fn string_to_u128(lumpid_str: &str) -> u128 {
-    if lumpid_str.len() <= 2 {
-        u128::from_str_radix(&lumpid_str, 10).unwrap()
-    } else if lumpid_str.starts_with("0x") {
-        u128::from_str_radix(&lumpid_str[2..], 16).unwrap()
+    if let Some(hex) = lumpid_str.strip_prefix("0x") {
+        u128::from_str_radix(hex, 16).unwrap()
     } else {
         u128::from_str_radix(&lumpid_str, 10).unwrap()
     }
