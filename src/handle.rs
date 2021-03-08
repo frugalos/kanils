@@ -323,7 +323,7 @@ mod tests {
         let mut handle = StorageHandle::new(storage);
 
         assert!(handle.put_str(0, "hoge").is_ok());
-        assert!(handle.delete_key(0)?, true);
+        assert_eq!(handle.delete_key(0)?, true);
         assert!(handle.get_as_string(0)?.is_none());
 
         Ok(())
