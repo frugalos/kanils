@@ -114,7 +114,7 @@ checksum = "a019b10a2a7cdeb292db131fc8113e57ea2a908f6e7894b0c3c671893b65dbeb"
 [[package]]
 name = "cannyls"
 version = "0.10.0"
-source = "git+https://github.com/frugalos/cannyls?branch=feature/conditional-dep-on-futures#9e4af588e801c330137a25257e52434cb925e109"
+source = "git+https://github.com/frugalos/cannyls?branch=feature/conditional-dep-on-futures#e96af55e7311f72180a2d81304f95b9732dd41a9"
 dependencies = [
  "adler32",
  "byteorder",
